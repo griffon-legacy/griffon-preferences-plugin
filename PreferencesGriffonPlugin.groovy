@@ -55,7 +55,7 @@ Usage
 -----
 `Preferences` are represented by a tree of nodes. Each node has a name (may not
 be unique) and a path (always unique). The root node has "/" as name and path.
-No other node may have the cahracter '/' in it's name. Nodes may contain
+No other node may have the character '/' in its name. Nodes may contain
 key-value entries.
 
 `Preferences` trigger events whenever a node changes value or nodes are
