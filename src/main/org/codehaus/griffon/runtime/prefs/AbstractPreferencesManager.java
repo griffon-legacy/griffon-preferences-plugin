@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2012-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package org.codehaus.griffon.runtime.prefs;
 
 import griffon.core.GriffonApplication;
 import griffon.plugins.preferences.*;
+import griffon.util.CallableWithArgs;
 import griffon.util.GriffonNameUtils;
 import griffon.util.RunnableWithArgs;
+import groovy.lang.Closure;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.slf4j.Logger;
@@ -29,6 +31,7 @@ import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -183,7 +186,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         if (!node.containsKey(key)) {
             throw new NoSuchPreferenceException(path);
         }
-        return node.getAt(key);
+        return evalPreferenceWithArguments(node.getAt(key), args);
     }
 
     protected Object resolvePreference(String path, String[] args, String defaultValue) {
@@ -191,11 +194,28 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         final PreferencesNode node = getPreferences().node(parsedPath[0]);
         final String key = parsedPath[1];
         if (node.containsKey(key)) {
-            return node.getAt(key);
+            return evalPreferenceWithArguments(node.getAt(key), args);
         } else {
             node.putAt(key, defaultValue);
             return defaultValue;
         }
+    }
+
+    protected Object evalPreferenceWithArguments(Object value, Object[] args) {
+        if (value instanceof Closure) {
+            Closure closure = (Closure) value;
+            return closure.call(args);
+        } else if (value instanceof CallableWithArgs) {
+            CallableWithArgs callable = (CallableWithArgs) value;
+            return callable.call(args);
+        } else if (value instanceof CharSequence) {
+            return formatPreferenceValue(String.valueOf(value), args);
+        }
+        return value;
+    }
+
+    protected String formatPreferenceValue(String resource, Object[] args) {
+        return MessageFormat.format(resource, args);
     }
 
     protected Object convertValue(Class<?> type, Object value) {
@@ -243,8 +263,8 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         private void remove(Object instance) {
             if (null == instance) return;
             InstanceContainer subject = null;
-            for (Iterator<InstanceContainer> it = instances.iterator(); it.hasNext(); ) {
-                subject = it.next();
+            for (InstanceContainer instance1 : instances) {
+                subject = instance1;
                 Object candidate = subject.instance();
                 if (instance.equals(candidate)) {
                     break;

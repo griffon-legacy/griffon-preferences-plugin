@@ -75,6 +75,36 @@ class PreferencesTest extends GroovyTestCase {
         assert nodeListener.event.type == NodeChangeEvent.Type.REMOVED
         assert nodeListener.event.path == '/foo/bar'
     }
+
+    void testNodeMerge() {
+        Preferences prefs1 = new DefaultPreferences()
+        prefs1.node('/foo/bar')['key1'] = 'value1'
+        prefs1.node('/foo/bar')['shared'] = 'shared'
+        Preferences prefs2 = new DefaultPreferences()
+        prefs2.node('/foo/bar')['key2'] = 'value2'
+        prefs2.node('/foo/bar')['shared'] = 'overwritten'
+
+        prefs1.node('/foo').merge(prefs2.node('/foo'))
+
+        assert prefs1.node('/foo/bar')['key1'] == 'value1'
+        assert prefs1.node('/foo/bar')['key2'] == 'value2'
+        assert prefs1.node('/foo/bar')['shared'] == 'overwritten'
+
+        assert !prefs2.node('/foo/bar').containsKey('key1')
+        assert prefs2.node('/foo/bar')['key2'] == 'value2'
+        assert prefs2.node('/foo/bar')['shared'] == 'overwritten'
+    }
+
+    void testCopyPreferences() {
+        Preferences prefs1 = new DefaultPreferences()
+        prefs1.node('/foo/bar')['key1'] = 'value1'
+        prefs1.node('/foo/bar')['key2'] = 'value2'
+
+        Preferences prefs2 = prefs1.copy()
+
+        assert prefs2.node('/foo/bar')['key1'] == 'value1'
+        assert prefs2.node('/foo/bar')['key2'] == 'value2'
+    }
 }
 
 class PrefsChangeListener implements PreferenceChangeListener {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2012-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,17 @@ import static org.codehaus.griffon.runtime.util.GriffonApplicationHelper.safeNew
  * @author Andres Almiray
  */
 public class PreferencesGriffonAddon extends AbstractGriffonAddon {
+    private static final String KEY_PREFERENCES_MANAGER_FACTORY = "preferences.manager.factory";
+    private static final String KEY_PREFERENCES_PERSISTOR_FACTORY = "preferences.persistor.factory";
+
+    private static final String DEFAULT_PREFERENCES_MANAGER_FACTORY = "org.codehaus.griffon.runtime.prefs.factories.DefaultPreferencesManagerFactory";
+    private static final String DEFAULT_PREFERENCES_PERSISTOR_FACTORY = "org.codehaus.griffon.runtime.prefs.factories.JsonPreferencesPersistorFactory";
+
     public PreferencesGriffonAddon() {
         super(ApplicationHolder.getApplication());
     }
 
-    public void addonInit(final GriffonApplication app) {
+    public void addonPostInit(GriffonApplication app) {
         final PreferencesManager preferencesManager = initializePreferencesManager(app);
         final PreferencesPersistor preferencesPersistor = initializePreferencesPersistor(app);
 
@@ -73,9 +79,6 @@ public class PreferencesGriffonAddon extends AbstractGriffonAddon {
         }
     }
 
-    private static final String KEY_PREFERENCES_MANAGER_FACTORY = "preferences.manager.factory";
-    private static final String DEFAULT_PREFERENCES_MANAGER_FACTORY = "org.codehaus.griffon.runtime.prefs.factories.DefaultPreferencesManagerFactory";
-
     private PreferencesManager initializePreferencesManager(GriffonApplication app) {
         String className = getConfigValueAsString(app.getConfig(), KEY_PREFERENCES_MANAGER_FACTORY, DEFAULT_PREFERENCES_MANAGER_FACTORY);
         if (getLog().isDebugEnabled()) {
@@ -86,9 +89,6 @@ public class PreferencesGriffonAddon extends AbstractGriffonAddon {
         PreferencesManagerHolder.setPreferencesManager(preferencesManager);
         return preferencesManager;
     }
-
-    private static final String KEY_PREFERENCES_PERSISTOR_FACTORY = "preferences.persistor.factory";
-    private static final String DEFAULT_PREFERENCES_PERSISTOR_FACTORY = "org.codehaus.griffon.runtime.prefs.factories.JsonPreferencesPersistorFactory";
 
     private PreferencesPersistor initializePreferencesPersistor(GriffonApplication app) {
         String className = getConfigValueAsString(app.getConfig(), KEY_PREFERENCES_PERSISTOR_FACTORY, DEFAULT_PREFERENCES_PERSISTOR_FACTORY);

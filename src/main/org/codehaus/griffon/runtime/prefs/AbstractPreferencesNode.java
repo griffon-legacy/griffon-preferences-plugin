@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2012-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,22 @@ public abstract class AbstractPreferencesNode implements PreferencesNode {
         return path().equals(PATH_SEPARATOR);
     }
 
+    public PreferencesNode merge(PreferencesNode other) {
+        if (other != null) {
+            for (String key : other.keys()) {
+                putAt(key, other.getAt(key));
+            }
+            for (Map.Entry<String, PreferencesNode> child : other.children().entrySet()) {
+                final String childNodeName = child.getKey();
+                PreferencesNode newChild = children().get(childNodeName);
+                if (newChild == null) newChild = createChildNode(childNodeName);
+                newChild.merge(child.getValue());
+                storeChildNode(childNodeName, newChild);
+            }
+        }
+        return this;
+    }
+
     protected boolean areEqual(Object oldValue, Object newValue) {
         if (oldValue == newValue) return true;
 
@@ -130,7 +146,7 @@ public abstract class AbstractPreferencesNode implements PreferencesNode {
             (!isRoot() && (path.startsWith(PATH_SEPARATOR)) ||
                 path.endsWith(PATH_SEPARATOR))) return null;
         path = path.replace('.', PATH_SEPARATOR.charAt(0));
-        if(isRoot() && path.startsWith(PATH_SEPARATOR)) {
+        if (isRoot() && path.startsWith(PATH_SEPARATOR)) {
             path = path.substring(1);
         }
         int split = path.indexOf(PATH_SEPARATOR);
