@@ -105,7 +105,7 @@ Configuration
 The following configuration flags control how Preferences are handled by an
 application. These flags must be defined in `Config.groovy`
 
-### PreferencesManagerFactory
+### PreferencesManagerFactory
 
 Flag: *preferences.manager.factory*
 
@@ -113,7 +113,7 @@ Type: *griffon.plugins.preferences.factories.PreferencesManagerFactory*
 
 Default: *org.codehaus.griffon.runtime.prefs.factories.DefaultPreferencesManagerFactory*
 
-### PreferencesPersistorFactory
+### PreferencesPersistorFactory
 
 Flag: *preferences.persistor.factory*
 
