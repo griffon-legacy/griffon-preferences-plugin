@@ -17,6 +17,7 @@
 package org.codehaus.griffon.runtime.prefs;
 
 import griffon.core.GriffonApplication;
+import griffon.core.resources.editors.ExtendedPropertyEditor;
 import griffon.core.resources.editors.PropertyEditorResolver;
 import griffon.plugins.preferences.*;
 import griffon.util.CallableWithArgs;
@@ -97,7 +98,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
 
                         if (null != value) {
                             if (!fd.field.getType().isAssignableFrom(value.getClass())) {
-                                value = convertValue(fd.field.getType(), value);
+                                value = convertValue(fd.field.getType(), value, fd.format);
                             }
                         }
                         setFieldValue(
@@ -143,7 +144,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         if (instance.getClass().getAnnotation(PreferencesAware.class) != null && !instanceStore.contains(instance)) {
             List<FieldDescriptor> fields = new LinkedList<FieldDescriptor>();
             for (PreferenceDescriptor pd : fieldsToBeInjected) {
-                fields.add(new FieldDescriptor(pd.field, pd.fqFieldName, pd.path));
+                fields.add(new FieldDescriptor(pd.field, pd.fqFieldName, pd.path, pd.format));
             }
             instanceStore.add(instance, fields);
         }
@@ -161,6 +162,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
             String[] args = annotation.args();
             String defaultValue = annotation.defaultValue();
             String resolvedPath = !isBlank(key) ? key : path;
+            String format = annotation.format();
 
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Field " + fqFieldName +
@@ -168,10 +170,11 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
                     " [path='" + resolvedPath +
                     "', args='" + Arrays.toString(args) +
                     "', defaultValue='" + defaultValue +
+                    "', format='" + format +
                     "'] is marked for preference injection.");
             }
 
-            fieldsToBeInjected.add(new PreferenceDescriptor(field, fqFieldName, path, args, defaultValue));
+            fieldsToBeInjected.add(new PreferenceDescriptor(field, fqFieldName, path, args, defaultValue, format));
         }
     }
 
@@ -186,7 +189,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
 
             if (null != value) {
                 if (!pd.field.getType().isAssignableFrom(value.getClass())) {
-                    value = convertValue(pd.field.getType(), value);
+                    value = convertValue(pd.field.getType(), value, pd.format);
                 }
                 setFieldValue(instance, pd.field, pd.fqFieldName, value);
             }
@@ -200,6 +203,14 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
             final PreferencesNode node = getPreferences().node(parsedPath[0]);
             final String key = parsedPath[1];
             if (value != null) {
+                // Convert value only if pd.format is not null
+                if (!isBlank(pd.format)) {
+                    PropertyEditor propertyEditor = resolvePropertyEditor(value.getClass(), pd.format);
+                    if(propertyEditor != null) {
+                        propertyEditor.setValue(value);
+                        value = propertyEditor.getAsText();
+                    }
+                }
                 node.putAt(key, value);
             } else {
                 node.remove(key);
@@ -246,8 +257,8 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         return MessageFormat.format(resource, args);
     }
 
-    protected Object convertValue(Class<?> type, Object value) {
-        PropertyEditor propertyEditor = PropertyEditorResolver.findEditor(type);
+    protected Object convertValue(Class<?> type, Object value, String format) {
+        PropertyEditor propertyEditor = resolvePropertyEditor(type, format);
         if (null == propertyEditor) return value;
         if (value instanceof CharSequence) {
             propertyEditor.setAsText(String.valueOf(value));
@@ -255,6 +266,14 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
             propertyEditor.setValue(value);
         }
         return propertyEditor.getValue();
+    }
+
+    protected PropertyEditor resolvePropertyEditor(Class<?> type, String format) {
+        PropertyEditor propertyEditor = PropertyEditorResolver.findEditor(type);
+        if (propertyEditor instanceof ExtendedPropertyEditor) {
+            ((ExtendedPropertyEditor) propertyEditor).setFormat(format);
+        }
+        return propertyEditor;
     }
 
     protected void setFieldValue(Object instance, Field field, String fqFieldName, Object value) {
@@ -383,13 +402,15 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         private final String path;
         private final String[] args;
         private final String defaultValue;
+        private final String format;
 
-        private PreferenceDescriptor(Field field, String fqFieldName, String path, String[] args, String defaultValue) {
+        private PreferenceDescriptor(Field field, String fqFieldName, String path, String[] args, String defaultValue, String format) {
             this.field = field;
             this.fqFieldName = fqFieldName;
             this.path = path;
             this.args = args;
             this.defaultValue = defaultValue;
+            this.format = format;
         }
     }
 
@@ -397,11 +418,13 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         private final Field field;
         private final String fqFieldName;
         private final String path;
+        private final String format;
 
-        private FieldDescriptor(Field field, String fqFieldName, String path) {
+        private FieldDescriptor(Field field, String fqFieldName, String path, String format) {
             this.field = field;
             this.fqFieldName = fqFieldName;
             this.path = path;
+            this.format = format;
         }
     }
 }

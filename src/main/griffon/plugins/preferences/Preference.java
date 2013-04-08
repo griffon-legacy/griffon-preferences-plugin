@@ -34,4 +34,6 @@ public @interface Preference {
     String[] args() default {};
 
     String defaultValue() default "";
+
+    String format() default "";
 }

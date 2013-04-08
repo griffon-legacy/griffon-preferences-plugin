@@ -70,17 +70,26 @@ Preference  values may also be injected following a naming convention. Classes
 that participate in preferences injection have their properties annotated with
 `@Preference`. Only classes annotated with `@PreferencesAware` will be notified
 of updates whenever preferences change value. The `@Preference` annotation
-defines additional parameters such as `key`, `args` and `defaultValue`; these
-parameters work exactly as shown by `@InjectedResource` (see [Resource Management][2]).
+defines additional parameters such as `key`, `args`, `defaultValue` and `format`;
+these parameters work exactly as shown by `@InjectedResource`
+(see [Resource Management][2]).
 
-Here's an example of a Model class defining a preference for a title
+Here's an example of a Model class defining a preference for a title and a custom
+format for a Date property
 
     package sample
+
     import griffon.plugins.preferences.Preference
     import griffon.plugins.preferences.PreferencesAware
+
+    @Bindable
     @PreferencesAware
     class SampleModel {
-        @Bindable @Preference(defaultValue='Sample') String title
+        @Preference(defaultValue='Sample')
+        String title
+
+        @Preference(defaultValue='08.04.2013 2:30 PM', format='dd.MM.yyyy h:mm a')
+        Date date
     }
 
 When the application is run for the first the `title` property will have "Sample"
@@ -90,7 +99,8 @@ Here are the contents of the `default.json` file
     {
         "sample": {
             "SampleModel": {
-                "title": "Sample"
+                "title": "Sample",
+                "date": "08.04.2013 2:30 PM"
             }
         }
     }
