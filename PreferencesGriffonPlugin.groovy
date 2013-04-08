@@ -19,9 +19,9 @@
  */
 class PreferencesGriffonPlugin {
     // the plugin version
-    String version = '0.1'
+    String version = '0.2.0'
     // the version or versions of Griffon the plugin is designed for
-    String griffonVersion = '1.2.0 > *'
+    String griffonVersion = '1.3.0 > *'
     // the other plugins this plugin depends on
     Map dependsOn = [:]
     // resources that are included in plugin packaging
@@ -51,6 +51,7 @@ class PreferencesGriffonPlugin {
 Provides a platform agnostic preferences facility, heavily influenced by JDK's
 [java.util.prefs.Preferences][1]. Preferences represent a hierarchical data
 structure that can be persisted across different running sessions.
+
 Usage
 -----
 `Preferences` are represented by a tree of nodes. Each node has a name (may not

@@ -18,6 +18,7 @@ package griffon.plugins.preferences.persistors;
 
 import griffon.core.ApplicationHandler;
 import griffon.core.GriffonApplication;
+import griffon.core.resources.editors.PropertyEditorResolver;
 import griffon.plugins.preferences.Preferences;
 import griffon.plugins.preferences.PreferencesManager;
 import griffon.plugins.preferences.PreferencesNode;
@@ -28,10 +29,9 @@ import groovy.json.JsonSlurper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.PropertyEditor;
 import java.io.*;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static griffon.util.ConfigUtils.getConfigValueAsString;
 
@@ -138,12 +138,58 @@ public class JsonPreferencesPersistor implements PreferencesPersistor, Applicati
 
     private void writeTo(PreferencesNode node, Map<String, Object> map) {
         for (String key : node.keys()) {
-            map.put(key, node.getAt(key));
+            Object value = node.getAt(key);
+            if (value != null) {
+                map.put(key, convertValue(value));
+            }
         }
         for (Map.Entry<String, PreferencesNode> child : node.children().entrySet()) {
             Map<String, Object> childMap = new LinkedHashMap<String, Object>();
             writeTo(child.getValue(), childMap);
             map.put(child.getKey(), childMap);
+        }
+    }
+
+    private Object convertValue(Object value) {
+        if (value == null ||
+            value instanceof Boolean ||
+            value instanceof Number ||
+            value instanceof CharSequence) {
+            return value;
+        }
+
+        if (value instanceof Map) {
+            Map<String, Object> tmp = new LinkedHashMap<String, Object>();
+            Map source = (Map) value;
+            for (Object key : source.keySet()) {
+                Object val = source.get(key);
+                if (val != null) {
+                    tmp.put(String.valueOf(key), convertValue(val));
+                }
+            }
+            return tmp;
+        } else if (value instanceof Collection) {
+            List<Object> tmp = new ArrayList<Object>();
+            List source = (List) value;
+            for (Object val : source) {
+                tmp.add(convertValue(val));
+            }
+            return tmp;
+        } else if (value.getClass().isArray()) {
+            List<Object> tmp = new ArrayList<Object>();
+            Object[] source = (Object[]) value; // blindly cast to Object[]
+            for (Object val : source) {
+                tmp.add(convertValue(val));
+            }
+            return tmp;
+        } else {
+            PropertyEditor propertyEditor = PropertyEditorResolver.findEditor(value.getClass());
+            if (propertyEditor != null) {
+                propertyEditor.setValue(value);
+                return propertyEditor.getAsText();
+            } else {
+                return value;
+            }
         }
     }
 }

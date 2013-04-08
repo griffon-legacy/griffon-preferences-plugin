@@ -23,4 +23,6 @@ import griffon.core.ApplicationHandler;
  */
 public interface PreferencesManager extends ApplicationHandler {
     Preferences getPreferences();
+
+    void save(Object instance);
 }

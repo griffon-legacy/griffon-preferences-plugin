@@ -17,6 +17,7 @@
 package org.codehaus.griffon.runtime.prefs;
 
 import griffon.core.GriffonApplication;
+import griffon.core.resources.editors.PropertyEditorResolver;
 import griffon.plugins.preferences.*;
 import griffon.util.CallableWithArgs;
 import griffon.util.GriffonNameUtils;
@@ -28,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyEditor;
-import java.beans.PropertyEditorManager;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
@@ -43,6 +43,7 @@ import static griffon.util.GriffonNameUtils.isBlank;
  */
 public abstract class AbstractPreferencesManager implements PreferencesManager {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPreferencesManager.class);
+    private static final Object[] NO_ARGS = new Object[0];
     protected final GriffonApplication app;
     private final InstanceStore instanceStore = new InstanceStore();
 
@@ -115,6 +116,19 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         return app;
     }
 
+    public void save(Object instance) {
+        if (instance == null) return;
+
+        List<PreferenceDescriptor> fieldsToSaved = new LinkedList<PreferenceDescriptor>();
+        Class klass = instance.getClass();
+        do {
+            harvestFields(klass, instance, fieldsToSaved);
+            klass = klass.getSuperclass();
+        } while (null != klass);
+
+        doSavePreferences(instance, fieldsToSaved);
+    }
+
     protected void injectPreferences(Object instance) {
         if (null == instance) return;
 
@@ -179,6 +193,20 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         }
     }
 
+    protected void doSavePreferences(Object instance, List<PreferenceDescriptor> fieldsToSaved) {
+        for (PreferenceDescriptor pd : fieldsToSaved) {
+            Object value = getFieldValue(instance, pd.field, pd.fqFieldName);
+            String[] parsedPath = parsePath(pd.path);
+            final PreferencesNode node = getPreferences().node(parsedPath[0]);
+            final String key = parsedPath[1];
+            if (value != null) {
+                node.putAt(key, value);
+            } else {
+                node.remove(key);
+            }
+        }
+    }
+
     protected Object resolvePreference(String path, String[] args) throws NoSuchPreferenceException {
         String[] parsedPath = parsePath(path);
         final PreferencesNode node = getPreferences().node(parsedPath[0]);
@@ -219,7 +247,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
     }
 
     protected Object convertValue(Class<?> type, Object value) {
-        final PropertyEditor propertyEditor = PropertyEditorManager.findEditor(type);
+        PropertyEditor propertyEditor = PropertyEditorResolver.findEditor(type);
         if (null == propertyEditor) return value;
         if (value instanceof CharSequence) {
             propertyEditor.setAsText(String.valueOf(value));
@@ -243,6 +271,23 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
                 }
             }
         }
+    }
+
+    protected Object getFieldValue(Object instance, Field field, String fqFieldName) {
+        String getter = GriffonNameUtils.getGetterName(field.getName());
+        try {
+            return InvokerHelper.invokeMethod(instance, getter, NO_ARGS);
+        } catch (MissingMethodException mme) {
+            try {
+                field.setAccessible(true);
+                return field.get(instance);
+            } catch (IllegalAccessException e) {
+                if (LOG.isWarnEnabled()) {
+                    LOG.warn("Cannot get value on field " + fqFieldName + " of instance " + instance, sanitize(e));
+                }
+            }
+        }
+        return null;
     }
 
     protected String[] parsePath(String path) {
