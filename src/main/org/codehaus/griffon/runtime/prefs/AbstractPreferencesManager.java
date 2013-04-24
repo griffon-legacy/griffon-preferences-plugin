@@ -174,7 +174,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
                     "'] is marked for preference injection.");
             }
 
-            fieldsToBeInjected.add(new PreferenceDescriptor(field, fqFieldName, path, args, defaultValue, format));
+            fieldsToBeInjected.add(new PreferenceDescriptor(field, fqFieldName, resolvedPath, args, defaultValue, format));
         }
     }
 
