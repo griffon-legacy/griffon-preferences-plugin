@@ -22,7 +22,22 @@ import griffon.core.ApplicationHandler;
  * @author Andres Almiray
  */
 public interface PreferencesManager extends ApplicationHandler {
+    /**
+     * Returns the {@code Preferences} instance contained by this manager.</p>
+     * Never returns null.
+     *
+     * @return the {@code Preferences} instance contained by this manager.
+     */
     Preferences getPreferences();
 
+    /**
+     * <p>Merges all fields/properties annotated with {@code @Preference} to their
+     * corresponding {@code PreferencesNode} within the contained {@code Preferences}.</p>
+     * <p>Values will be transformed their literal representation if a <code>format</code>
+     * is present in their {@code @Preference} annotation. Null values will cause
+     * the removal of the key in the {@code PreferencesNode}.</p>
+     *
+     * @param instance an object with fields/properties annotated with {@code @Preference}.
+     */
     void save(Object instance);
 }
