@@ -295,9 +295,10 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
     }
 
     protected String[] parsePath(String path) {
-        int split = path.indexOf(".");
+        int split = path.lastIndexOf(".");
         String head = split < 0 ? path : path.substring(0, split);
         String tail = split > 0 ? path.substring(split + 1) : null;
+        head = head.replace('.', '/');
         return new String[]{head, tail};
     }
 
