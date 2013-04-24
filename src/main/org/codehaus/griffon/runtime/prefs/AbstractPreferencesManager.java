@@ -180,12 +180,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
 
     protected void doPreferencesInjection(Object instance, List<PreferenceDescriptor> fieldsToBeInjected) {
         for (PreferenceDescriptor pd : fieldsToBeInjected) {
-            Object value = null;
-            if (isBlank(pd.defaultValue)) {
-                value = resolvePreference(pd.path, pd.args);
-            } else {
-                value = resolvePreference(pd.path, pd.args, pd.defaultValue);
-            }
+            Object value = resolvePreference(pd.path, pd.args, pd.defaultValue);
 
             if (null != value) {
                 if (!pd.field.getType().isAssignableFrom(value.getClass())) {
@@ -216,16 +211,6 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
                 node.remove(key);
             }
         }
-    }
-
-    protected Object resolvePreference(String path, String[] args) throws NoSuchPreferenceException {
-        String[] parsedPath = parsePath(path);
-        final PreferencesNode node = getPreferences().node(parsedPath[0]);
-        final String key = parsedPath[1];
-        if (!node.containsKey(key)) {
-            throw new NoSuchPreferenceException(path);
-        }
-        return evalPreferenceWithArguments(node.getAt(key), args);
     }
 
     protected Object resolvePreference(String path, String[] args, String defaultValue) {
