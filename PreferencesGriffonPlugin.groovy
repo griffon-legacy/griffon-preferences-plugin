@@ -19,7 +19,7 @@
  */
 class PreferencesGriffonPlugin {
     // the plugin version
-    String version = '0.2.0'
+    String version = '0.2.1'
     // the version or versions of Griffon the plugin is designed for
     String griffonVersion = '1.3.0 > *'
     // the other plugins this plugin depends on
