@@ -201,7 +201,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
                 // Convert value only if pd.format is not null
                 if (!isBlank(pd.format)) {
                     PropertyEditor propertyEditor = resolvePropertyEditor(value.getClass(), pd.format);
-                    if(propertyEditor != null) {
+                    if (propertyEditor != null) {
                         propertyEditor.setValue(value);
                         value = propertyEditor.getAsText();
                     }
@@ -238,8 +238,12 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         return value;
     }
 
-    protected String formatPreferenceValue(String resource, Object[] args) {
-        return MessageFormat.format(resource, args);
+    protected String formatPreferenceValue(String message, Object[] args) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Formatting message={} args={}", message, Arrays.toString(args));
+        }
+        if (args == null || args.length == 0) return message;
+        return MessageFormat.format(message, args);
     }
 
     protected Object convertValue(Class<?> type, Object value, String format) {
