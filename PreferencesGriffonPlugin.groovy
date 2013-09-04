@@ -19,7 +19,7 @@
  */
 class PreferencesGriffonPlugin {
     // the plugin version
-    String version = '0.2.2'
+    String version = '0.3.0'
     // the version or versions of Griffon the plugin is designed for
     String griffonVersion = '1.3.0 > *'
     // the other plugins this plugin depends on
@@ -42,6 +42,7 @@ class PreferencesGriffonPlugin {
 
     List authors = [
         [
+            id: 'aalmiray',
             name: 'Andres Almiray',
             email: 'aalmiray@yahoo.com'
         ]
@@ -90,6 +91,12 @@ format for a Date property
 
         @Preference(defaultValue='08.04.2013 2:30 PM', format='dd.MM.yyyy h:mm a')
         Date date
+
+        private String isbn
+
+        @Preference(defaultValue='9781935182238')
+        public void setIsbn(String isbn) { this.isbn = isbn }
+        public String getIsbn() { this.isbn }
     }
 
 When the application is run for the first the `title` property will have "Sample"
@@ -99,6 +106,7 @@ Here are the contents of the `default.json` file
     {
         "sample": {
             "SampleModel": {
+                "isbn": "9781935182238",
                 "title": "Sample",
                 "date": "08.04.2013 2:30 PM"
             }
@@ -110,6 +118,11 @@ new value will be shown the next time the application is launched.
 
 It's worth noting that if a preference cannot be resolved a
 `griffon.plugins.preferences.NoSuchPreferenceException` is thrown.
+
+The `@Preference` annotation may be applied to methods too, as long as the method
+represents a property getter or setter. Both read and write methods must exist.
+The annotation may be applied to any of the property accessors. The setter has
+precedence in the event of both accessors being annotated.
 
 Configuration
 -------------
