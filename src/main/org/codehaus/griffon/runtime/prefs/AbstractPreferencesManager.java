@@ -24,6 +24,8 @@ import griffon.util.CallableWithArgs;
 import griffon.util.GriffonClassUtils;
 import griffon.util.RunnableWithArgs;
 import groovy.lang.Closure;
+import groovy.lang.MissingMethodException;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +40,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static griffon.util.GriffonExceptionHandler.sanitize;
-import static griffon.util.GriffonNameUtils.isBlank;
+import static griffon.util.GriffonNameUtils.*;
 import static java.lang.reflect.Modifier.isStatic;
 
 /**
@@ -389,7 +391,6 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         }
     }
 
-
     private static abstract class InjectionPoint {
         public final String fqName;
         public final String path;
@@ -409,6 +410,7 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
     }
 
     private static class FieldInjectionPoint extends InjectionPoint {
+        private static final Object[] NO_ARGS = new Object[0];
         public final Field field;
 
         private FieldInjectionPoint(Field field, String fqName, String path, String format) {
@@ -417,23 +419,33 @@ public abstract class AbstractPreferencesManager implements PreferencesManager {
         }
 
         public void setValue(Object instance, Object value) {
+            String setter = getSetterName(field.getName());
             try {
-                field.setAccessible(true);
-                field.set(instance, value);
-            } catch (IllegalAccessException e) {
-                if (LOG.isWarnEnabled()) {
-                    LOG.warn("Cannot set value on field " + fqName + " of instance " + instance, sanitize(e));
+                InvokerHelper.invokeMethod(instance, setter, value);
+            } catch (MissingMethodException mme) {
+                try {
+                    field.setAccessible(true);
+                    field.set(instance, value);
+                } catch (IllegalAccessException e) {
+                    if (LOG.isWarnEnabled()) {
+                        LOG.warn("Cannot set value on field " + fqName + " of instance " + instance, sanitize(e));
+                    }
                 }
             }
         }
 
         public Object getValue(Object instance) {
+            String getter = getGetterName(field.getName());
             try {
-                field.setAccessible(true);
-                return field.get(instance);
-            } catch (IllegalAccessException e) {
-                if (LOG.isWarnEnabled()) {
-                    LOG.warn("Cannot get value on field " + fqName + " of instance " + instance, sanitize(e));
+                return InvokerHelper.invokeMethod(instance, getter, NO_ARGS);
+            } catch (MissingMethodException mme) {
+                try {
+                    field.setAccessible(true);
+                    return field.get(instance);
+                } catch (IllegalAccessException e) {
+                    if (LOG.isWarnEnabled()) {
+                        LOG.warn("Cannot get value from field " + fqName + " of instance " + instance, sanitize(e));
+                    }
                 }
             }
             return null;
